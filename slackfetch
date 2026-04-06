@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# slackfetch - Super-fast system info fetcher
+# Works on most Linux distributions
+
+# ------------------------------
+# Colors
+# ------------------------------
+c1="\033[1;36m"
+c2="\033[1;32m"
+c0="\033[0m"
+
+# ------------------------------
+# Functions
+# ------------------------------
+get_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo "$NAME $VERSION"
+    else
+        uname -s
+    fi
+}
+
+get_uptime() {
+    if [ -r /proc/uptime ]; then
+        local up=$(cut -d. -f1 /proc/uptime)
+        local h=$((up/3600))
+        local m=$(((up%3600)/60))
+        echo "${h}h ${m}m"
+    else
+        echo "N/A"
+    fi
+}
+
+get_cpu() {
+    if [ -r /proc/cpuinfo ]; then
+        grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | sed 's/^ //'
+    else
+        uname -p
+    fi
+}
+
+get_mem() {
+    if command -v free &>/dev/null; then
+        free -h | awk '/Mem:/ {print $3 "/" $2}'
+    else
+        echo "N/A"
+    fi
+}
+
+get_disk() {
+    df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}'
+}
+
+# ------------------------------
+# Gather system info
+# ------------------------------
+OS=$(get_os)
+KERNEL=$(uname -r)
+UPTIME=$(get_uptime)
+SHELL=$(basename "$SHELL")
+CPU=$(get_cpu)
+RAM=$(get_mem)
+DISK=$(get_disk)
+USERHOST="$USER@$(hostname)"
+
+# ------------------------------
+# Output
+# ------------------------------
+echo -e "${c1}   _____ _            _    ${c0}"
+echo -e "${c1}  / ____| |          | |   ${c0} ${c2}$USERHOST${c0}"
+echo -e "${c1} | (___ | | __ _  ___| | __${c0} ${c2}OS:${c0} $OS"
+echo -e "${c1}  \\___ \\| |/ _\` |/ __| |/ /${c0} ${c2}Kernel:${c0} $KERNEL"
+echo -e "${c1}  ____) | | (_| | (__|   < ${c0} ${c2}Uptime:${c0} $UPTIME"
+echo -e "${c1} |_____/|_|\\__,_|\\___|_|\\_\\${c0} ${c2}Shell:${c0} $SHELL"
+echo -e "                     ${c2}CPU:${c0} $CPU"
+echo -e "                     ${c2}RAM:${c0} $RAM"
+echo -e "                     ${c2}Disk:${c0} $DISK"
