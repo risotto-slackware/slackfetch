@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# slackfetch - Super-fast system info fetcher
-# Works on most Linux distributions
+# slackfetch - Super-fast system info fetcher with DE and swap info
 
 # ------------------------------
 # Colors
@@ -48,8 +47,27 @@ get_mem() {
     fi
 }
 
+get_swap() {
+    if command -v free &>/dev/null; then
+        free -h | awk '/Swap:/ {print $3 "/" $2}'
+    else
+        echo "N/A"
+    fi
+}
+
 get_disk() {
     df -h / | awk 'NR==2 {print $3 "/" $2 " (" $5 ")"}'
+}
+
+get_de() {
+    # Common environment variables for desktop environments
+    if [ -n "$XDG_CURRENT_DESKTOP" ]; then
+        echo "$XDG_CURRENT_DESKTOP"
+    elif [ -n "$DESKTOP_SESSION" ]; then
+        echo "$DESKTOP_SESSION"
+    else
+        echo "N/A"
+    fi
 }
 
 # ------------------------------
@@ -61,7 +79,9 @@ UPTIME=$(get_uptime)
 SHELL=$(basename "$SHELL")
 CPU=$(get_cpu)
 RAM=$(get_mem)
+SWAP=$(get_swap)
 DISK=$(get_disk)
+DE=$(get_de)
 USERHOST="$USER@$(hostname)"
 
 # ------------------------------
@@ -73,6 +93,8 @@ echo -e "${c1} | (___ | | __ _  ___| | __${c0} ${c2}OS:${c0} $OS"
 echo -e "${c1}  \\___ \\| |/ _\` |/ __| |/ /${c0} ${c2}Kernel:${c0} $KERNEL"
 echo -e "${c1}  ____) | | (_| | (__|   < ${c0} ${c2}Uptime:${c0} $UPTIME"
 echo -e "${c1} |_____/|_|\\__,_|\\___|_|\\_\\${c0} ${c2}Shell:${c0} $SHELL"
+echo -e "                     ${c2}DE:${c0} $DE"
 echo -e "                     ${c2}CPU:${c0} $CPU"
 echo -e "                     ${c2}RAM:${c0} $RAM"
+echo -e "                     ${c2}Swap:${c0} $SWAP"
 echo -e "                     ${c2}Disk:${c0} $DISK"
