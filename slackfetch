@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# slackfetch - Super-fast system info fetcher with DE and swap info
+# slackfetch - Super-fast system info fetcher with DE, swap, battery, packages
 
 # ------------------------------
 # Colors
@@ -60,11 +60,30 @@ get_disk() {
 }
 
 get_de() {
-    # Common environment variables for desktop environments
     if [ -n "$XDG_CURRENT_DESKTOP" ]; then
         echo "$XDG_CURRENT_DESKTOP"
     elif [ -n "$DESKTOP_SESSION" ]; then
         echo "$DESKTOP_SESSION"
+    else
+        echo "N/A"
+    fi
+}
+
+get_battery() {
+    for bat in /sys/class/power_supply/BAT*; do
+        if [ -d "$bat" ]; then
+            local cap=$(cat "$bat/capacity" 2>/dev/null)
+            local status=$(cat "$bat/status" 2>/dev/null)
+            echo "${cap}% (${status})"
+            return
+        fi
+    done
+    echo "N/A"
+}
+
+get_packages() {
+    if [ -d /var/log/packages ]; then
+        ls /var/log/packages | wc -l
     else
         echo "N/A"
     fi
@@ -82,10 +101,12 @@ RAM=$(get_mem)
 SWAP=$(get_swap)
 DISK=$(get_disk)
 DE=$(get_de)
+BATTERY=$(get_battery)
+PACKAGES=$(get_packages)
 USERHOST="$USER@$(hostname)"
 
 # ------------------------------
-# Output
+# Output 
 # ------------------------------
 echo -e "${c1}   _____ _            _    ${c0}"
 echo -e "${c1}  / ____| |          | |   ${c0} ${c2}$USERHOST${c0}"
@@ -96,5 +117,9 @@ echo -e "${c1} |_____/|_|\\__,_|\\___|_|\\_\\${c0} ${c2}Shell:${c0} $SHELL"
 echo -e "                     ${c2}DE:${c0} $DE"
 echo -e "                     ${c2}CPU:${c0} $CPU"
 echo -e "                     ${c2}RAM:${c0} $RAM"
+echo -e "                     ${c2}Swap:${c0} $SWAP"
+echo -e "                     ${c2}Disk:${c0} $DISK"
+echo -e "                     ${c2}Packages:${c0} $PACKAGES"
+echo -e "                     ${c2}Battery:${c0} $BATTERY"
 echo -e "                     ${c2}Swap:${c0} $SWAP"
 echo -e "                     ${c2}Disk:${c0} $DISK"
